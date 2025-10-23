@@ -118,22 +118,21 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .modal-close-btn { font-size: 28px; font-weight: bold; cursor: pointer; }
         #modal-schedule-container { overflow-y: auto; }
-        #modal-schedule-grid {
-            display: grid; grid-template-columns: 80px repeat(6, 1fr); /* 5 -> 6 */
-        }
-        #modal-schedule-grid .grid-header,
-        #modal-schedule-grid .time-cell {
+        #modal-schedule-container .grid-header,
+        #modal-schedule-container .time-cell {
             background-color: #f8f8f8; font-weight: bold; padding: 8px 5px;
             border: 1px solid #e0e0e0;
         }
-        #modal-schedule-grid .day-header {
+        #modal-schedule-container .day-header {
             background-color: #ecf0f1; font-weight: bold; padding: 10px;
             border: 1px solid #e0e0e0;
         }
-        #modal-schedule-grid .modal-schedule-cell {
+        #modal-schedule-container .modal-schedule-cell {
             border: 1px solid #e0e0e0; min-height: 40px;
             position: relative; 
         }
+        #modal-weekday-grid { display: grid; grid-template-columns: 80px repeat(5, 1fr); }
+        #modal-saturday-grid { display: grid; grid-template-columns: 80px 1fr; }
         
         .subject-수학 { background-color: #b3e0ff; } .subject-영어 { background-color: #ffe0b3; }
         .subject-과학 { background-color: #b3ffb3; } .subject-국어 { background-color: #ffb3b3; }
@@ -200,7 +199,10 @@
                 <span class="modal-close-btn" onclick="closeModal()">&times;</span>
             </div>
             <div id="modal-schedule-container">
-                 <div class="schedule-grid" id="modal-schedule-grid"></div>
+                 <h3>평일 시간표 (15:00 ~ 22:00)</h3>
+                 <div class="schedule-grid" id="modal-weekday-grid"></div>
+                 <h3 style="margin-top: 20px;">토요일 시간표 (10:00 ~ 17:30)</h3>
+                 <div class="schedule-grid" id="modal-saturday-grid"></div>
             </div>
         </div>
     </div>
@@ -224,7 +226,9 @@
         const db = firebase.firestore();
 
         let scheduleData = { '월': {}, '화': {}, '수': {}, '목': {}, '금': {}, '토': {} };
-        const startTimeHour = 15; const endTimeHour = 22; const days = ['월', '화', '수', '목', '금', '토'];
+        const weekdayStartHour = 15; const weekdayEndHour = 22;
+        const saturdayStartHour = 10; const saturdayEndHour = 18; // 17:30까지 포함
+        const days = ['월', '화', '수', '목', '금', '토'];
         const subjectColors = {
             '수학': 'subject-수학', '영어': 'subject-영어', '과학': 'subject-과학',
             '국어': 'subject-국어', '사회': 'subject-사회', '기타': 'subject-기타',
@@ -274,12 +278,17 @@
             const students = studentsWithStartTime.map(s => s.name);
             grid.innerHTML = '';
             grid.style.gridTemplateColumns = `80px repeat(${students.length}, 1fr)`;
+            
+            const startHour = day === '토' ? saturdayStartHour : weekdayStartHour;
+            const endHour = day === '토' ? saturdayEndHour : weekdayEndHour;
+
             let gridHTML = `<div class="grid-header sticky-col" style="grid-column: 1; grid-row: 1;">시간</div>`;
             students.forEach((name, i) => {
                 gridHTML += `<div class="student-col-header" onclick="openStudentWeekView('${name}')" style="grid-column: ${i+2}; grid-row: 1;">${name}</div>`;
             });
+
             let row = 2;
-            for (let h = startTimeHour; h < endTimeHour; h++) {
+            for (let h = startHour; h < endHour; h++) {
                 ['00', '30'].forEach(m => {
                     gridHTML += `<div class="time-cell sticky-col" style="grid-row: ${row};">${String(h).padStart(2, '0')}:${m}</div>`;
                     students.forEach((name, i) => {
@@ -289,6 +298,7 @@
                 });
             }
             grid.innerHTML = gridHTML;
+
             students.forEach(studentName => {
                 const subjects = scheduleData[day][studentName] || [];
                 subjects.forEach(subjectInfo => {
@@ -351,7 +361,7 @@
         }
         
         function styleStudentBlocks(studentName, day, isModal = false) {
-            const selector = isModal ? `#modal-schedule-grid .subject-block[data-student="${studentName}"][data-day="${day}"]` : `#grid-${day} .subject-block[data-student="${studentName}"]`;
+            const selector = isModal ? `#modal-schedule-container .subject-block[data-student="${studentName}"][data-day="${day}"]` : `#grid-${day} .subject-block[data-student="${studentName}"]`;
             const blocks = document.querySelectorAll(selector);
             if (blocks.length === 0) return;
             const sorted = Array.from(blocks).sort((a, b) => a.parentElement.id.localeCompare(b.parentElement.id));
@@ -400,21 +410,37 @@
             document.getElementById('subjects-container').appendChild(clone);
         }
         
+        // --- ✨ 여기가 핵심 변경사항입니다 (2/2) ---
         function openStudentWeekView(studentName) {
             document.getElementById('modal-student-name').textContent = `${studentName} 학생 주간 시간표`;
-            const modalGrid = document.getElementById('modal-schedule-grid');
-            modalGrid.innerHTML = '';
-            let modalGridHTML = `<div class="grid-header sticky-col">시간</div>`;
-            days.forEach(day => { modalGridHTML += `<div class="day-header">${day}요일</div>`; });
-            for (let h = startTimeHour; h < endTimeHour; h++) {
+            const weekdayGrid = document.getElementById('modal-weekday-grid');
+            const saturdayGrid = document.getElementById('modal-saturday-grid');
+            weekdayGrid.innerHTML = '';
+            saturdayGrid.innerHTML = '';
+
+            // 1. 평일 그리드 생성
+            let weekdayHTML = `<div class="grid-header sticky-col">시간</div>` + ['월','화','수','목','금'].map(d => `<div class="day-header">${d}</div>`).join('');
+            for (let h = weekdayStartHour; h < weekdayEndHour; h++) {
                 ['00', '30'].forEach(m => {
-                    modalGridHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
-                    days.forEach(day => {
-                        modalGridHTML += `<div class="modal-schedule-cell" id="modal-cell-${day}-${h}-${m}"></div>`;
+                    weekdayHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
+                    ['월','화','수','목','금'].forEach(day => {
+                        weekdayHTML += `<div class="modal-schedule-cell" id="modal-cell-${day}-${h}-${m}"></div>`;
                     });
                 });
             }
-            modalGrid.innerHTML = modalGridHTML;
+            weekdayGrid.innerHTML = weekdayHTML;
+
+            // 2. 토요일 그리드 생성
+            let saturdayHTML = `<div class="grid-header sticky-col">시간</div><div class="day-header">토</div>`;
+            for (let h = saturdayStartHour; h < saturdayEndHour; h++) {
+                ['00', '30'].forEach(m => {
+                    saturdayHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
+                    saturdayHTML += `<div class="modal-schedule-cell" id="modal-cell-토-${h}-${m}"></div>`;
+                });
+            }
+            saturdayGrid.innerHTML = saturdayHTML;
+
+            // 3. 데이터 채우기
             days.forEach(day => {
                 const subjects = scheduleData[day]?.[studentName] || [];
                 subjects.forEach(subjectInfo => {
