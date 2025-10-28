@@ -117,7 +117,12 @@
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .modal-close-btn { font-size: 28px; font-weight: bold; cursor: pointer; }
-        #modal-schedule-container { overflow-y: auto; }
+        #modal-schedule-container {
+            overflow-y: auto;
+            display: flex; /* 평일/토요일 그리드를 옆으로 배치 */
+            flex-wrap: nowrap; /* 줄바꿈 방지 */
+            gap: 20px; /* 두 그리드 사이 간격 */
+        }
         #modal-schedule-container .grid-header,
         #modal-schedule-container .time-cell {
             background-color: #f8f8f8; font-weight: bold; padding: 8px 5px;
@@ -138,38 +143,75 @@
             background-color: #17a2b8; color: white; border: none; border-radius: 5px;
             padding: 8px 15px; font-size: 14px; cursor: pointer; margin-left: auto;
         }
+        /* 인쇄 관련 스타일 */
         @media print {
-            body * { visibility: hidden; }
-            #printable-area, #printable-area * { visibility: visible; }
-            #printable-area {
+            body * { visibility: hidden !important; } /* 모든 페이지 요소 숨김 */
+            #student-modal, #printable-area, #printable-area * { visibility: visible !important; } /* 인쇄 영역만 보이도록 */
+            #student-modal {
                 position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-                font-size: 8pt;
+                background-color: white !important; /* 배경 투명하게 */
+                display: flex !important;
+                align-items: flex-start !important; /* 위쪽 정렬 */
+                justify-content: flex-start !important; /* 왼쪽 정렬 */
             }
-            .modal-content { box-shadow: none; border: none; }
-            #printable-area h2 { 
-                font-size: 14pt; 
-                text-align: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+            .modal-content {
+                width: 90% !important; max-width: none !important;
+                margin: 0 !important; padding: 0 !important;
+                box-shadow: none !important; border: none !important;
+                overflow: visible !important; /* 스크롤바 제거 */
+                height: auto !important; /* 높이 자동 조절 */
             }
-            #printable-area h2 img { height: 20px; margin-right: 8px; }
-            #printable-area h3 { font-size: 11pt; margin-top: 15px; }
-            #printable-area .subject-block b { font-size: 9pt; }
-            #printable-area .memo-text { font-size: 7pt; }
-            #printable-area .time-cell, #printable-area .day-header { font-size: 8pt; padding: 4px 2px; }
-            #printable-area .modal-schedule-cell { min-height: 25px; }
-            @page { 
-                size: A4;
-                margin: 20mm;
+            #printable-area {
+                width: 100%; height: auto;
+                font-size: 8pt; /* 전체 글자 크기 축소 */
+                box-sizing: border-box;
+                padding: 10mm; /* A4 여백 */
+            }
+
+            /* 인쇄 시 제목, 로고 스타일 */
+            #printable-area .modal-header {
+                display: flex; justify-content: center; align-items: center;
+                margin-bottom: 10mm; /* 여백 추가 */
+                padding-top: 5mm; /* 상단 여백 추가 */
+            }
+            #printable-area .modal-header h2 {
+                font-size: 14pt; margin: 0;
+                display: flex; align-items: center;
+            }
+            #printable-area .modal-header h2 img { height: 20px; margin-right: 8px; }
+            #printable-area #print-btn, #printable-area .modal-close-btn { display: none !important; } /* 버튼 숨김 */
+
+            /* 평일/토요일 그리드 인쇄 레이아웃 */
+            #modal-schedule-container {
+                display: flex !important;
+                flex-wrap: wrap !important; /* A4 1/4을 위해 줄바꿈 허용 */
+                justify-content: space-between; /* 양쪽 정렬 */
+                gap: 5mm; /* 그리드 사이 간격 */
             }
             .printable-section {
-                width: 100%;
-                height: auto;
-                page-break-inside: avoid;
+                width: 48% !important; /* A4의 약 1/4 너비 (여백 고려) */
+                height: auto !important;
+                page-break-inside: avoid; /* 페이지 넘김 방지 */
                 box-sizing: border-box;
-                padding: 5mm;
+                border: 1px solid #e0e0e0; /* 테두리 유지 */
+                margin: 0 !important; /* 추가 마진 제거 */
+                padding: 5px !important; /* 내부 패딩 줄임 */
             }
+            .printable-section h3 { display: none !important; } /* 평일/토요일 제목 숨김 */
+
+            /* 그리드 헤더, 시간 셀 등 글자 크기 조정 */
+            #printable-area .time-cell, #printable-area .day-header { font-size: 7pt !important; padding: 2px 0 !important; }
+            #printable-area .subject-block b { font-size: 8pt !important; margin-bottom: 1px !important; }
+            #printable-area .memo-text { font-size: 6pt !important; line-height: 1 !important; }
+            #printable-area .modal-schedule-cell { min-height: 18px !important; } /* 셀 높이 줄임 */
+            
+            /* 시간표 배경색 유지 */
+            .subject-수학 { background-color: #b3e0ff !important; -webkit-print-color-adjust: exact; }
+            .subject-영어 { background-color: #ffe0b3 !important; -webkit-print-color-adjust: exact; }
+            .subject-과학 { background-color: #b3ffb3 !important; -webkit-print-color-adjust: exact; }
+            .subject-국어 { background-color: #ffb3b3 !important; -webkit-print-color-adjust: exact; }
+            .subject-사회 { background-color: #e0b3ff !important; -webkit-print-color-adjust: exact; }
+            .subject-기타 { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
         }
         
         .subject-수학 { background-color: #b3e0ff; } .subject-영어 { background-color: #ffe0b3; }
@@ -182,6 +224,7 @@
         <h1>
             <img src="https://raw.githubusercontent.com/Leena1-100/Skycode-Timetable/main/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202025-08-28%20012041.png" alt="스카이코드 로고">
         </h1>
+
         <div id="main-input-form" class="input-form">
             <div class="form-row">
                 <div class="input-group"><label for="studentName">학생 이름</label><input type="text" id="studentName"></div>
@@ -241,11 +284,9 @@
                 </div>
                 <div id="modal-schedule-container">
                      <div class="printable-section">
-                         <h3>평일 시간표 (15:00 ~ 22:00)</h3>
                          <div class="schedule-grid" id="modal-weekday-grid"></div>
                      </div>
                      <div class="printable-section" style="margin-top: 20px;">
-                         <h3>토요일 시간표 (10:00 ~ 17:30)</h3>
                          <div class="schedule-grid" id="modal-saturday-grid"></div>
                      </div>
                 </div>
@@ -257,6 +298,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
         const firebaseConfig = {
           apiKey: "AIzaSyABj6I5mmD3WN9cu8B0sIB2ZO0INgwBuuI",
@@ -266,6 +308,7 @@
           messagingSenderId: "66485090384",
           appId: "1:66485090384:web:8759a841a04a7f3704b955"
         };
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -273,9 +316,16 @@
         const weekdayStartHour = 15; const weekdayEndHour = 22;
         const saturdayStartHour = 10; const saturdayEndHour = 18;
         const days = ['월', '화', '수', '목', '금', '토'];
-        const subjectColors = { '수학': 'subject-수학', '영어': 'subject-영어', '과학': 'subject-과학', '국어': 'subject-국어', '사회': 'subject-사회', '기타': 'subject-기타' };
+        const weekdayOnlyDays = ['월', '화', '수', '목', '금'];
+        const subjectColors = {
+            '수학': 'subject-수학', '영어': 'subject-영어', '과학': 'subject-과학',
+            '국어': 'subject-국어', '사회': 'subject-사회', '기타': 'subject-기타',
+        };
         const timeToMinutes = t => { if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-        const minutesToTime = m => { const h = Math.floor(m / 60); const min = m % 60; return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`; };
+        const minutesToTime = m => {
+            const h = Math.floor(m / 60); const min = m % 60;
+            return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+        };
         
         function toggleInputForm() {
             const form = document.getElementById('main-input-form');
@@ -319,10 +369,12 @@
             
             const startHour = day === '토' ? saturdayStartHour : weekdayStartHour;
             const endHour = day === '토' ? saturdayEndHour : weekdayEndHour;
+
             let gridHTML = `<div class="grid-header sticky-col" style="grid-column: 1; grid-row: 1;">시간</div>`;
             students.forEach((name, i) => {
                 gridHTML += `<div class="student-col-header" onclick="openStudentWeekView('${name}')" style="grid-column: ${i+2}; grid-row: 1;">${name}</div>`;
             });
+
             let row = 2;
             for (let h = startHour; h < endHour; h++) {
                 ['00', '30'].forEach(m => {
@@ -334,6 +386,7 @@
                 });
             }
             grid.innerHTML = gridHTML;
+
             students.forEach(studentName => {
                 const subjects = scheduleData[day][studentName] || [];
                 subjects.forEach(subjectInfo => {
@@ -366,11 +419,14 @@
             if (!studentName) return alert('학생 이름을 입력해주세요.');
             const subjectRows = document.querySelectorAll('#subjects-container .subject-entry-row');
             if (subjectRows.length === 0) {
-                if(scheduleData[studyDay]?.[studentName] && confirm(`일정을 삭제하시겠습니까?`)) {
+                if(scheduleData[studyDay]?.[studentName] && confirm(`'${studentName}' 학생의 ${studyDay}요일 일정을 모두 삭제하시겠습니까?`)) {
                     await deleteSchedule(studentName, studyDay);
+                } else if (!scheduleData[studyDay]?.[studentName]) {
+                    alert('삭제할 일정이 없습니다.');
                 }
             } else {
                 const subjects = [];
+                let hasValidSubject = false;
                 subjectRows.forEach(row => {
                     const subject = row.querySelector('.subject-select').value;
                     const startStr = row.querySelector('.start-time').value;
@@ -378,8 +434,15 @@
                     const memo = row.querySelector('.memo').value;
                     if (startStr && endStr && timeToMinutes(startStr) < timeToMinutes(endStr)) {
                         subjects.push({ subject, start: timeToMinutes(startStr), end: timeToMinutes(endStr), memo });
+                        hasValidSubject = true;
                     }
                 });
+
+                if (!hasValidSubject) {
+                    alert('최소 하나의 유효한 과목 및 시간을 입력해야 합니다.');
+                    return;
+                }
+                
                 await db.collection('schedules').doc(studyDay).set({ [studentName]: subjects }, { merge: true });
             }
             document.getElementById('main-input-form').style.display = 'none'; 
@@ -388,7 +451,7 @@
 
         async function deleteSchedule(studentName, day, event) {
             if(event) event.stopPropagation();
-            if (confirm(`일정을 삭제하시겠습니까?`)) {
+            if (confirm(`'${studentName}' 학생의 ${day}요일 일정을 모두 삭제하시겠습니까?`)) {
                 await db.collection('schedules').doc(day).update({
                     [studentName]: firebase.firestore.FieldValue.delete()
                 });
@@ -399,7 +462,13 @@
             const selector = isModal ? `#modal-schedule-container .subject-block[data-student="${studentName}"][data-day="${day}"]` : `#grid-${day} .subject-block[data-student="${studentName}"]`;
             const blocks = document.querySelectorAll(selector);
             if (blocks.length === 0) return;
-            const sorted = Array.from(blocks).sort((a, b) => a.parentElement.id.localeCompare(b.parentElement.id));
+            const sorted = Array.from(blocks).sort((a, b) => {
+                const idA = a.parentElement.id;
+                const idB = b.parentElement.id;
+                const timeA = parseInt(idA.split('-')[3]) * 60 + parseInt(idA.split('-')[4]);
+                const timeB = parseInt(idB.split('-')[3]) * 60 + parseInt(idB.split('-')[4]);
+                return timeA - timeB;
+            });
             sorted[0].classList.add('is-first-block');
             sorted[sorted.length - 1].classList.add('is-last-block');
             if (!isModal) {
@@ -437,7 +506,7 @@
         function validateTimeInput(input) {
             if (!input.value) return;
             const [h, m] = input.value.split(':').map(Number);
-            const roundedM = Math.round(m / 10) * 10;
+            const roundedM = Math.round(m / 30) * 30; // 30분 단위로 반올림
             input.value = `${String(h).padStart(2, '0')}:${String(roundedM).padStart(2, '0')}`;
         }
         function addSubjectField() {
@@ -452,27 +521,55 @@
             const saturdayGrid = document.getElementById('modal-saturday-grid');
             weekdayGrid.innerHTML = '';
             saturdayGrid.innerHTML = '';
-            
-            let weekdayHTML = `<div class="grid-header sticky-col">시간</div>` + ['월','화','수','목','금'].map(d => `<div class="day-header">${d}</div>`).join('');
-            for (let h = weekdayStartHour; h < weekdayEndHour; h++) {
+
+            // 평일 수업의 최대 종료 시간을 찾아서 그리드 범위 설정
+            let maxWeekdayEnd = weekdayStartHour * 60;
+            weekdayOnlyDays.forEach(day => {
+                const subjects = scheduleData[day]?.[studentName] || [];
+                subjects.forEach(s => {
+                    if (s.end > maxWeekdayEnd) maxWeekdayEnd = s.end;
+                });
+            });
+            const effectiveWeekdayEndHour = Math.max(weekdayStartHour, Math.ceil(maxWeekdayEnd / 60));
+
+            // 토요일 수업의 최대 종료 시간을 찾아서 그리드 범위 설정
+            let maxSaturdayEnd = saturdayStartHour * 60;
+            const saturdaySubjects = scheduleData['토']?.[studentName] || [];
+            saturdaySubjects.forEach(s => {
+                if (s.end > maxSaturdayEnd) maxSaturdayEnd = s.end;
+            });
+            const effectiveSaturdayEndHour = Math.max(saturdayStartHour, Math.ceil(maxSaturdayEnd / 60));
+
+
+            // 1. 평일 그리드 생성
+            let weekdayHTML = `<div class="grid-header sticky-col">시간</div>` + weekdayOnlyDays.map(d => `<div class="day-header">${d}</div>`).join('');
+            for (let h = weekdayStartHour; h < effectiveWeekdayEndHour; h++) {
                 ['00', '30'].forEach(m => {
+                    // 마지막 수업 이후 30분까지만 표시 (예: 17:00에 끝나면 17:00~17:30 칸은 안 나옴)
+                    if (h * 60 + parseInt(m) >= maxWeekdayEnd && m !== '00') return; 
+
                     weekdayHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
-                    ['월','화','수','목','금'].forEach(day => {
-                        weekdayHTML += `<div class="modal-schedule-cell" id="modal-cell-${day}-${h}-${m}"></div>`;
+                    weekdayOnlyDays.forEach(day => {
+                        weekdayHTML += `<div class="modal-schedule-cell" id="modal-cell-${day}-${h}-${m}" data-student="${studentName}" data-day="${day}"></div>`;
                     });
                 });
             }
             weekdayGrid.innerHTML = weekdayHTML;
-            
+
+            // 2. 토요일 그리드 생성
             let saturdayHTML = `<div class="grid-header sticky-col">시간</div><div class="day-header">토</div>`;
-            for (let h = saturdayStartHour; h < saturdayEndHour; h++) {
+            for (let h = saturdayStartHour; h < effectiveSaturdayEndHour; h++) {
                 ['00', '30'].forEach(m => {
+                     // 마지막 수업 이후 30분까지만 표시 (예: 17:00에 끝나면 17:00~17:30 칸은 안 나옴)
+                    if (h * 60 + parseInt(m) >= maxSaturdayEnd && m !== '00') return;
+
                     saturdayHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
-                    saturdayHTML += `<div class="modal-schedule-cell" id="modal-cell-토-${h}-${m}"></div>`;
+                    saturdayHTML += `<div class="modal-schedule-cell" id="modal-cell-토-${h}-${m}" data-student="${studentName}" data-day="토"></div>`;
                 });
             }
             saturdayGrid.innerHTML = saturdayHTML;
 
+            // 3. 데이터 채우기
             days.forEach(day => {
                 const subjects = scheduleData[day]?.[studentName] || [];
                 subjects.forEach(subjectInfo => {
@@ -491,6 +588,8 @@
                             const block = document.createElement('div');
                             block.className = `subject-block ${subjectColors[subjectInfo.subject]}`;
                             block.innerHTML = textContent;
+                            block.dataset.student = studentName;
+                            block.dataset.day = day;
                             cell.appendChild(block);
                         }
                     }
@@ -517,7 +616,14 @@
             });
             
             const modal = document.getElementById('student-modal');
-            modal.onclick = function(event) { if (event.target == modal) { closeModal(); } }
+            modal.onclick = function(event) {
+                // 모달 오버레이를 직접 클릭했을 때만 닫기
+                if (event.target === modal) {
+                    closeModal();
+                }
+            }
+            // 초기 로드 시 월요일 탭 활성화
+            openDay(null, '월');
         };
     </script>
 </body>
