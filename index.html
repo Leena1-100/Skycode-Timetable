@@ -138,13 +138,12 @@
             background-color: #17a2b8; color: white; border: none; border-radius: 5px;
             padding: 8px 15px; font-size: 14px; cursor: pointer; margin-left: auto;
         }
-        /* --- ✨ 인쇄 관련 스타일 수정 --- */
         @media print {
             body * { visibility: hidden !important; }
             #printable-area, #printable-area * { visibility: visible !important; }
             #printable-area {
                 position: absolute; left: 0; top: 0; width: 100%; height: auto;
-                font-size: 9pt; /* 글자 크기 조정 */
+                font-size: 9pt;
             }
             .modal-content {
                 box-shadow: none !important; border: none !important;
@@ -163,8 +162,7 @@
             #printable-area #print-btn, #printable-area .modal-close-btn { display: none !important; }
 
             #print-schedule-container {
-                display: flex !important; flex-direction: column; /* 위아래로 배치 */
-                gap: 10mm;
+                display: block; /* A4 반 크기를 위해 flex 제거 */
             }
             .printable-section {
                 width: 100% !important; height: auto !important;
@@ -179,9 +177,8 @@
             #printable-area .memo-text { font-size: 7pt !important; line-height: 1.1 !important; white-space: normal; }
             #printable-area .modal-schedule-cell { min-height: 20px !important; }
             
-            @page { size: A4 portrait; margin: 15mm; } /* A4 세로, 여백 조정 */
+            @page { size: A4 portrait; margin: 15mm; }
 
-            /* 배경색 인쇄 옵션 */
             .subject-수학 { background-color: #b3e0ff !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
             .subject-영어 { background-color: #ffe0b3 !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
             .subject-과학 { background-color: #b3ffb3 !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
@@ -263,14 +260,8 @@
                 </div>
 
                 <div id="print-schedule-container" style="display: none;">
-                    <div class="printable-section" id="print-weekday-section">
-                        <h3>평일 시간표</h3>
-                        <div class="schedule-grid" id="print-weekday-grid"></div>
-                    </div>
-                    <div class="printable-section" id="print-saturday-section">
-                        <h3>토요일 시간표</h3>
-                        <div class="schedule-grid" id="print-saturday-grid"></div>
-                    </div>
+                    <div class="printable-section" id="print-weekday-section"></div>
+                    <div class="printable-section" id="print-saturday-section"></div>
                 </div>
             </div>
         </div>
@@ -280,8 +271,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
-        // --- ✨ 전체 자바스크립트 코드 (모든 함수 포함) ---
         const firebaseConfig = {
           apiKey: "AIzaSyABj6I5mmD3WN9cu8B0sIB2ZO0INgwBuuI",
           authDomain: "skycode-timetable.firebaseapp.com",
@@ -294,8 +285,9 @@
         const db = firebase.firestore();
 
         let scheduleData = { '월': {}, '화': {}, '수': {}, '목': {}, '금': {}, '토': {} };
-        const weekdayStartHour = 15; const weekdayEndHour = 22;
-        const saturdayStartHour = 10; const saturdayEndHour = 18;
+        // --- ✨ 여기가 핵심 변경사항입니다 (1/2) ---
+        const startTimeHour = 15; const endTimeHour = 22;
+        // --- ✨ 변경사항 끝 ---
         const days = ['월', '화', '수', '목', '금', '토'];
         const weekdayOnlyDays = ['월', '화', '수', '목', '금'];
         const subjectColors = { '수학': 'subject-수학', '영어': 'subject-영어', '과학': 'subject-과학', '국어': 'subject-국어', '사회': 'subject-사회', '기타': 'subject-기타' };
@@ -342,14 +334,12 @@
             grid.innerHTML = '';
             grid.style.gridTemplateColumns = `80px repeat(${students.length}, 1fr)`;
             
-            const startHour = day === '토' ? saturdayStartHour : weekdayStartHour;
-            const endHour = day === '토' ? saturdayEndHour : weekdayEndHour;
             let gridHTML = `<div class="grid-header sticky-col" style="grid-column: 1; grid-row: 1;">시간</div>`;
             students.forEach((name, i) => {
                 gridHTML += `<div class="student-col-header" onclick="openStudentWeekView('${name}')" style="grid-column: ${i+2}; grid-row: 1;">${name}</div>`;
             });
             let row = 2;
-            for (let h = startHour; h < endHour; h++) {
+            for (let h = startTimeHour; h < endTimeHour; h++) {
                 ['00', '30'].forEach(m => {
                     gridHTML += `<div class="time-cell sticky-col" style="grid-row: ${row};">${String(h).padStart(2, '0')}:${m}</div>`;
                     students.forEach((name, i) => {
@@ -475,11 +465,8 @@
             const modalGrid = document.getElementById('modal-schedule-grid');
             modalGrid.innerHTML = '';
             
-            const modalStartHour = Math.min(weekdayStartHour, saturdayStartHour);
-            const modalEndHour = Math.max(weekdayEndHour, saturdayEndHour);
-
             let modalGridHTML = `<div class="grid-header sticky-col">시간</div>` + days.map(d => `<div class="day-header">${d}</div>`).join('');
-            for (let h = modalStartHour; h < modalEndHour; h++) {
+            for (let h = startTimeHour; h < endTimeHour; h++) {
                 ['00', '30'].forEach(m => {
                     modalGridHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
                     days.forEach(day => {
@@ -521,11 +508,12 @@
             document.getElementById('student-modal').style.display = 'none';
         }
 
+        // --- ✨ 여기가 핵심 변경사항입니다 (2/2) ---
         function printSchedule() {
             const studentName = document.getElementById('modal-student-name').textContent.replace(' 학생 주간 시간표', '');
+            const printStudentName = document.getElementById('print-student-name');
             const weekdayGrid = document.getElementById('print-weekday-grid');
             const saturdayGrid = document.getElementById('print-saturday-grid');
-            const printStudentName = document.getElementById('print-student-name');
             const satSection = document.getElementById('print-saturday-section');
 
             printStudentName.innerHTML = `<img src="https://raw.githubusercontent.com/Leena1-100/Skycode-Timetable/main/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202025-08-28%20012041.png" alt="스카이코드 로고"> ${studentName} 학생 주간 시간표`;
@@ -535,17 +523,17 @@
                 const subjects = scheduleData[day]?.[studentName] || [];
                 subjects.forEach(s => { if (s.end > maxWeekdayEnd) maxWeekdayEnd = s.end; });
             });
-            const effectiveWeekdayEndHour = maxWeekdayEnd > 0 ? Math.ceil(maxWeekdayEnd / 60) : weekdayStartHour;
+            const effectiveWeekdayEndHour = maxWeekdayEnd > 0 ? Math.ceil(maxWeekdayEnd / 60) : startTimeHour;
 
             let maxSaturdayEnd = 0;
             const saturdaySubjects = scheduleData['토']?.[studentName] || [];
             saturdaySubjects.forEach(s => { if (s.end > maxSaturdayEnd) maxSaturdayEnd = s.end; });
-            const effectiveSaturdayEndHour = maxSaturdayEnd > 0 ? Math.ceil(maxSaturdayEnd / 60) : saturdayStartHour;
+            const effectiveSaturdayEndHour = maxSaturdayEnd > 0 ? Math.ceil(maxSaturdayEnd / 60) : startTimeHour;
             
             satSection.style.display = saturdaySubjects.length > 0 ? 'block' : 'none';
 
             let weekdayHTML = `<div class="grid-header sticky-col">시간</div>` + weekdayOnlyDays.map(d => `<div class="day-header">${d}</div>`).join('');
-            for (let h = weekdayStartHour; h < effectiveWeekdayEndHour; h++) {
+            for (let h = startTimeHour; h < effectiveWeekdayEndHour; h++) {
                 ['00', '30'].forEach(m => {
                     if (h * 60 + parseInt(m) >= maxWeekdayEnd) return;
                     weekdayHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
@@ -570,7 +558,7 @@
 
             if (saturdaySubjects.length > 0) {
                 let saturdayHTML = `<div class="grid-header sticky-col">시간</div><div class="day-header">토</div>`;
-                for (let h = saturdayStartHour; h < effectiveSaturdayEndHour; h++) {
+                for (let h = startTimeHour; h < effectiveSaturdayEndHour; h++) {
                     ['00', '30'].forEach(m => {
                         if (h * 60 + parseInt(m) >= maxSaturdayEnd) return;
                         saturdayHTML += `<div class="time-cell sticky-col">${String(h).padStart(2, '0')}:${m}</div>`;
@@ -601,10 +589,8 @@
                     renderDay(day);
                 });
             });
-            
             const modal = document.getElementById('student-modal');
             modal.onclick = function(event) { if (event.target === modal) { closeModal(); } }
-            // 초기 로드 시 월요일 탭 활성화
             openDay(null, '월');
         };
     </script>
