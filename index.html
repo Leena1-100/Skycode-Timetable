@@ -14,13 +14,13 @@
             width: 100%; max-width: 1200px; background-color: white; padding: 30px;
             border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        h1 { 
-            text-align: center; margin-bottom: 20px; 
+        h1 {
+            text-align: center; margin-bottom: 20px;
         }
         h1 img {
             height: 50px;
         }
-        
+
         #main-input-form {
             display: none;
         }
@@ -77,14 +77,14 @@
             border: 1px solid #e0e0e0; text-align: center; box-sizing: border-box;
         }
         .grid-header, .time-cell { grid-column: 1; }
-        .student-col-header { 
+        .student-col-header {
             background-color: #ecf0f1; font-weight: bold; padding: 10px; min-width: 150px;
             cursor: pointer; position: relative; z-index: 1;
         }
         .time-cell { font-weight: bold; font-size: 14px; padding: 5px 0;}
         .schedule-cell { position: relative; min-height: 40px; }
         .sticky-col {
-            position: -webkit-sticky; position: sticky; left: 0; z-index: 2; 
+            position: -webkit-sticky; position: sticky; left: 0; z-index: 2;
             background-color: #f8f8f8;
         }
         .sticky-col.grid-header { background-color: #ecf0f1; }
@@ -131,9 +131,9 @@
             border: 1px solid #e0e0e0;
         }
         #modal-schedule-grid .modal-schedule-cell {
-            border: 1px solid #e0e0e0; min-height: 40px; position: relative; 
+            border: 1px solid #e0e0e0; min-height: 40px; position: relative;
         }
-        
+
         #print-btn {
             background-color: #17a2b8; color: white; border: none; border-radius: 5px;
             padding: 8px 15px; font-size: 14px; cursor: pointer; margin-left: auto;
@@ -171,16 +171,16 @@
             }
             .printable-section:not(:first-child) { margin-top: 10mm; }
 
-            #print-weekday-grid, #print-saturday-grid { 
-                display: grid; 
-                grid-template-columns: 60px repeat(6, 1fr); 
+            #print-weekday-grid, #print-saturday-grid {
+                display: grid;
+                grid-template-columns: 60px repeat(6, 1fr);
             }
-            
+
             #printable-area .time-cell, #printable-area .day-header { font-size: 8pt !important; padding: 3px 0 !important; }
             #printable-area .subject-block b { font-size: 9pt !important; margin-bottom: 2px !important; }
             #printable-area .memo-text { font-size: 7pt !important; line-height: 1.1 !important; white-space: normal; }
             #printable-area .modal-schedule-cell { min-height: 20px !important; }
-            
+
             @page { size: A4 portrait; margin: 15mm; }
 
             .subject-수학 { background-color: #b3e0ff !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
@@ -190,7 +190,7 @@
             .subject-사회 { background-color: #e0b3ff !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
             .subject-기타 { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
         }
-        
+
         .subject-수학 { background-color: #b3e0ff; } .subject-영어 { background-color: #ffe0b3; }
         .subject-과학 { background-color: #b3ffb3; } .subject-국어 { background-color: #ffb3b3; }
         .subject-사회 { background-color: #e0b3ff; } .subject-기타 { background-color: #f0f0f0; }
@@ -201,6 +201,7 @@
         <h1>
             <img src="https://raw.githubusercontent.com/Leena1-100/Skycode-Timetable/main/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202025-08-28%20012041.png" alt="스카이코드 로고">
         </h1>
+
         <div id="main-input-form" class="input-form">
             <div class="form-row">
                 <div class="input-group"><label for="studentName">학생 이름</label><input type="text" id="studentName"></div>
@@ -511,9 +512,10 @@
 
         function printSchedule() {
             const studentName = document.getElementById('modal-student-name').textContent.replace(' 학생 주간 시간표', '');
-            const printGridSection = document.getElementById('print-grid-section');
             document.querySelector('#printable-area h2').innerHTML = `<img src="https://raw.githubusercontent.com/Leena1-100/Skycode-Timetable/main/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202025-08-28%20012041.png" alt="스카이코드 로고"> ${studentName} 학생 주간 시간표`;
             
+            const printGrid = document.getElementById('print-grid-section');
+
             let maxEnd = 0;
             days.forEach(day => {
                 const subjects = scheduleData[day]?.[studentName] || [];
@@ -544,19 +546,66 @@
                     });
                 });
             }
-            printGridSection.innerHTML = printHTML;
-            printGridSection.style.gridTemplateColumns = `60px repeat(6, 1fr)`;
+            printGrid.innerHTML = printHTML;
+            printGrid.style.gridTemplateColumns = `60px repeat(6, 1fr)`;
             
             window.print();
         }
         
         window.onload = () => {
+            // HTML 구조를 먼저 생성
+            const container = document.querySelector('.container');
+            const inputFormHTML = `
+                <div class="form-row">
+                    <div class="input-group"><label for="studentName">학생 이름</label><input type="text" id="studentName"></div>
+                    <div class="input-group"><label for="studyDay">요일</label><select id="studyDay">
+                        <option value="월">월요일</option><option value="화">화요일</option><option value="수">수요일</option>
+                        <option value="목">목요일</option><option value="금">금요일</option><option value="토">토요일</option>
+                    </select></div>
+                </div>
+                <div id="subjects-container">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 5px; padding: 0 5px;">
+                        <label>과목</label><label>시작 시간</label><label>종료 시간</label><label>교재/메모</label>
+                    </div>
+                </div>
+                <button class="add-subject-btn" onclick="addSubjectField()">+ 과목 추가하기</button>
+                <button id="submit-btn" onclick="updateSchedule()">시간표에 등록/수정</button>
+            `;
+            document.getElementById('main-input-form').innerHTML = inputFormHTML;
+            
+            const templateHTML = `
+                <div class="subject-entry-row">
+                    <div class="input-group"><select class="subject-select">
+                        <option value="국어">국어</option><option value="수학">수학</option><option value="영어">영어</option>
+                        <option value="과학">과학</option><option value="사회">사회</option><option value="기타">기타</option>
+                    </select></div>
+                    <div class="input-group"><input type="time" class="start-time" step="600" onchange="validateTimeInput(this)"></div>
+                    <div class="input-group"><input type="time" class="end-time" step="600" onchange="validateTimeInput(this)"></div>
+                    <div class="input-group"><input type="text" class="memo" placeholder="예: 그래머 1권"></div>
+                    <button class="remove-subject-btn" onclick="this.parentElement.remove()">-</button>
+                </div>
+            `;
+             document.getElementById('subject-entry-template').innerHTML = templateHTML;
+
+            const tabContainerHTML = `
+                <button class="tab-button active" onclick="openDay(event, '월')">월요일</button>
+                <button class="tab-button" onclick="openDay(event, '화')">화요일</button>
+                <button class="tab-button" onclick="openDay(event, '수')">수요일</button>
+                <button class="tab-button" onclick="openDay(event, '목')">목요일</button>
+                <button class="tab-button" onclick="openDay(event, '금')">금요일</button>
+                <button class="tab-button" onclick="openDay(event, '토')">토요일</button>
+            `;
+             document.querySelector('.tab-container').innerHTML = tabContainerHTML;
+
+
+            // Firebase 데이터 감지 시작
             days.forEach(day => {
                 db.collection('schedules').doc(day).onSnapshot((doc) => {
                     scheduleData[day] = doc.exists ? doc.data() : {};
                     renderDay(day);
                 });
             });
+            
             const modal = document.getElementById('student-modal');
             modal.onclick = function(event) { if (event.target === modal) { closeModal(); } }
             openDay(null, '월');
